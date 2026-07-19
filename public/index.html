@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Learnova — AI-powered Smart LMS with focus detection, curated courses, and intelligent scheduling." />
+  <title>Learnova — Smart LMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH  (LOGIN / SIGNUP) — Split-screen layout
+     ============================================================ -->
+<div id="auth-container" class="auth-container">
+
+  <!-- LEFT — branding panel -->
+  <div class="auth-split-left">
+    <div class="auth-brand-logo">
+      <div class="logo-mark">L</div>
+      <span class="brand-name">Learnova</span>
+    </div>
+
+    <div class="auth-brand-body">
+      <h2 class="auth-brand-tagline">Learn smarter,<br>achieve faster.</h2>
+      <p class="auth-brand-desc">
+        AI-powered focus detection, curated courses, and smart
+        scheduling — everything you need to master any subject.
+      </p>
+      <ul class="auth-brand-features">
+        <li>
+          <span class="feat-dot">📹</span>
+          Real-time focus monitoring with AI
+        </li>
+        <li>
+          <span class="feat-dot">🎓</span>
+          Curated video courses across domains
+        </li>
+        <li>
+          <span class="feat-dot">📅</span>
+          Smart task scheduling &amp; reminders
+        </li>
+        <li>
+          <span class="feat-dot">🤖</span>
+          Intelligent course assistant chatbot
+        </li>
+      </ul>
+    </div>
+
+    <div class="auth-brand-testimonial">
+      <p class="auth-brand-quote">
+        "Learnova completely changed how I study. The AI focus detection alone
+        helped me double my productive study hours."
+      </p>
+      <div class="auth-brand-author">
+        <div class="auth-brand-avatar">S</div>
+        <div>
+          <div class="auth-brand-author-name">Sandy</div>
+          <div class="auth-brand-author-role">AI Student, BMSCE</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /auth-split-left -->
+
+  <!-- RIGHT — form panel -->
+  <div class="auth-split-right">
+    <div class="auth-card">
+      <h1 class="app-title">Welcome back</h1>
+      <p class="app-subtitle">Sign in to continue your learning journey</p>
+
+      <div class="auth-tabs">
+        <button id="login-tab"  class="auth-tab active">Login</button>
+        <button id="signup-tab" class="auth-tab">Sign Up</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">Email address</label>
+          <input type="email" id="login-email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required />
+        </div>
+
+        <div class="auth-links">
+          <a href="#" id="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="primary-btn wide">Sign in</button>
+
+        <p class="demo-note">
+          Demo credentials<br />
+          <strong>student@example.com</strong> / <strong>password</strong><br />
+          <strong>admin@example.com</strong> / <strong>admin</strong>
+        </p>
+
+        <div id="login-error"   class="error-msg"></div>
+        <div id="login-success" class="success-msg"></div>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="signup-form" class="auth-form hidden">
+        <div class="form-group">
+          <label for="signup-name">Full name</label>
+          <input type="text" id="signup-name" placeholder="Your name" required />
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Email address</label>
+          <input type="email" id="signup-email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" placeholder="Create a strong password" required />
+        </div>
+        <div class="form-group">
+          <label for="signup-confirm">Confirm password</label>
+          <input type="password" id="signup-confirm" placeholder="Repeat password" required />
+        </div>
+
+        <button type="submit" class="primary-btn wide">Create account</button>
+
+        <div id="signup-error"   class="error-msg"></div>
+        <div id="signup-success" class="success-msg"></div>
+      </form>
+    </div><!-- /auth-card -->
+  </div><!-- /auth-split-right -->
+
+  <!-- FORGOT PASSWORD MODAL -->
+  <div id="forgot-modal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Reset password">
+    <div class="modal-content small-width">
+      <h2>Reset your password</h2>
+      <div class="form-group">
+        <label for="forgot-email">Enter your account email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com" aria-label="Reset email" />
+      </div>
+      <div class="modal-actions">
+        <button id="forgot-submit" class="primary-btn tiny">Send reset link</button>
+        <button id="forgot-close"  class="secondary-btn tiny">Cancel</button>
+      </div>
+      <div id="forgot-message" class="success-msg"></div>
+    </div>
+  </div>
+
+</div><!-- /#auth-container -->
+
+
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="app-container" class="app-container hidden">
+
+  <!-- TOP NAVBAR -->
+  <header class="topnav" role="banner">
+    <div class="topnav-left">
+      <div class="logo-circle" aria-hidden="true">L</div>
+      <div class="logo-text-block">
+        <span class="logo-title">Learnova</span>
+        <span class="logo-subtitle">Smart LMS</span>
+      </div>
+    </div>
+
+    <nav class="topnav-menu" aria-label="Main navigation">
+
+      <!-- Start Learning mega-menu trigger -->
+      <div class="topnav-item start-learning-wrapper">
+        <button
+          id="start-learning-btn"
+          class="topnav-link"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Start Learning
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:2px;opacity:.6">
+            <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div id="start-learning-panel" class="mega-panel hidden" aria-hidden="true">
+          <div class="mega-left">
+            <p class="mega-label">Kickstart your learning</p>
+            <h3>Start Learning</h3>
+            <p class="mega-subtext">
+              Explore programming tutorials, curated notes, and
+              guided course paths — all in one place.
+            </p>
+          </div>
+          <div class="mega-right">
+            <button class="pill-btn" data-mega-action="blogs">
+              <span style="margin-right:6px">✍️</span>Blogs
+            </button>
+            <button class="pill-btn" data-mega-action="notes">
+              <span style="margin-right:6px">📝</span>Notes
+            </button>
+            <button class="pill-btn" data-mega-action="courses">
+              <span style="margin-right:6px">🎓</span>Courses
+            </button>
+            <p class="mega-note">Choose a path to get started.</p>
+          </div>
+        </div>
+      </div><!-- /start-learning-wrapper -->
+
+      <button class="topnav-link" id="tutorials-link">Tutorials</button>
+
+      <button class="topnav-link topnav-route" data-view="courses-view">Courses</button>
+      <button class="topnav-link topnav-route" data-view="dashboard-view">Dashboard</button>
+
+      <button
+        class="avatar-pill topnav-route"
+        data-view="profile-view"
+        id="nav-profile-btn"
+        aria-label="My profile"
+      >
+        <span id="nav-avatar-initial">U</span>
+      </button>
+    </nav>
+  </header><!-- /.topnav -->
+
+  <!-- MAIN LAYOUT -->
+  <div class="layout-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" role="navigation" aria-label="Sidebar navigation">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Navigation</div>
+
+        <button class="side-link active" data-view="dashboard-view">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+          </span>
+          Dashboard
+        </button>
+
+        <button class="side-link" data-view="courses-view">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M10 8l6 4-6 4V8z" stroke="none" fill="currentColor"/>
+            </svg>
+          </span>
+          Courses
+        </button>
+
+        <button class="side-link" data-view="schedule-view">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+          My Schedule
+        </button>
+
+        <button class="side-link" data-view="profile-view">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </span>
+          Profile
+        </button>
+
+        <button class="side-link" data-view="settings-view">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </span>
+          Settings
+        </button>
+      </div>
+
+      <button id="logout-btn" class="side-link logout-btn">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </span>
+        Logout
+      </button>
+    </aside><!-- /.sidebar -->
+
+    <!-- MAIN CONTENT -->
+    <main class="main" id="main-content">
+
+      <!-- ── DASHBOARD VIEW ─────────────────────────────────── -->
+      <section id="dashboard-view" class="view active" aria-label="Dashboard">
+
+        <!-- Hero / search card -->
+        <section class="hero-card">
+          <div class="hero-left">
+            <span class="hero-pill">
+              <span class="hero-pill-dot"></span>
+              Inspired by DreamsLMS
+            </span>
+            <h1>Find the best courses and<br>upskill with AI guidance.</h1>
+            <p>
+              Learnova helps you discover curated courses, track progress,
+              and stay consistent with smart scheduling and visual analytics.
+            </p>
+
+            <div class="hero-search">
+              <div class="hero-search-main">
+                <input
+                  type="text"
+                  id="hero-search-input"
+                  placeholder="Search skills, domains, or courses…"
+                  aria-label="Search courses"
+                />
+                <select id="hero-domain-select" aria-label="Select domain">
+                  <option value="">All Domains</option>
+                  <option value="AI">AI</option>
+                  <option value="Web Dev">Web Development</option>
+                  <option value="Data Science">Data Science</option>
+                  <option value="Programming">Programming</option>
+                </select>
+                <button id="hero-search-btn" class="primary-btn">Explore Courses</button>
+              </div>
+              <p class="hero-search-note">
+                Tip: Use filters to narrow down exactly what you need.
+              </p>
+            </div>
+          </div><!-- /hero-left -->
+
+          <div class="hero-right">
+            <div class="hero-stat-card">
+              <p class="hero-stat-label">This Week</p>
+              <p class="hero-stat-value" id="hero-week-hours">0h</p>
+              <p class="hero-stat-sub">Study time logged</p>
+            </div>
+            <div class="hero-stat-card">
+              <p class="hero-stat-label">In Progress</p>
+              <p class="hero-stat-value" id="hero-courses-progress">0</p>
+              <p class="hero-stat-sub">Courses active — keep going 🔥</p>
+            </div>
+          </div><!-- /hero-right -->
+        </section><!-- /.hero-card -->
+
+        <!-- Row 1: Course overview + Overall progress -->
+        <div class="grid-2">
+          <div class="card">
+            <h2>My Courses Overview</h2>
+            <p class="sub-text">Continue where you left off across all enrolled courses.</p>
+            <div id="courses-overview" class="course-list"></div>
+          </div>
+
+          <div class="card">
+            <h2>Overall Progress</h2>
+            <div class="progress-summary">
+              <div class="donut-wrapper">
+                <div class="donut" id="overall-donut" role="img" aria-label="Overall progress donut">
+                  <span id="overall-percent">0%</span>
+                </div>
+              </div>
+              <div class="summary-text">
+                <p id="weekly-hours">You studied 0 hours this week.</p>
+                <p id="status-text">Let's plan your next session.</p>
+                <h3 class="section-subheading">Recently viewed</h3>
+                <div id="recent-bars" class="recent-bars"></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /.grid-2 -->
+
+        <!-- Row 2: Heatmap + Plan/Recommended/Announcements -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header-row">
+              <h2>Your Learning Streak</h2>
+              <span class="card-tag">365-day view</span>
+            </div>
+            <p class="sub-text">Each square represents activity on that day, similar to GitHub contributions.</p>
+
+            <div class="heatmap-wrapper">
+              <div class="heatmap-months" id="heatmap-month-labels" aria-hidden="true"></div>
+              <div class="heatmap-body">
+                <div class="heatmap-weekday-labels" aria-hidden="true">
+                  <span>Mon</span>
+                  <span>Wed</span>
+                  <span>Fri</span>
+                </div>
+                <div class="heatmap-grid" id="heatmap-grid" role="grid" aria-label="Learning activity heatmap"></div>
+              </div>
+              <div class="heatmap-legend" aria-label="Heatmap legend">
+                <span>Less</span>
+                <div class="legend-squares">
+                  <span class="legend-square level-0"></span>
+                  <span class="legend-square level-1"></span>
+                  <span class="legend-square level-2"></span>
+                  <span class="legend-square level-3"></span>
+                  <span class="legend-square level-4"></span>
+                </div>
+                <span>More</span>
+              </div>
+            </div>
+          </div><!-- /heatmap card -->
+
+          <div class="card stacked-card">
+            <div class="stacked-section">
+              <h2>Today's Plan</h2>
+              <ul id="todo-list" class="todo-list" aria-label="Today's to-do list"></ul>
+              <button id="save-todos" class="primary-btn tiny" style="align-self:flex-start; margin-top:0.25rem;">
+                Save plan
+              </button>
+            </div>
+
+            <div class="stacked-section">
+              <h2>Recommended for you</h2>
+              <div id="recommended" class="recommended"></div>
+            </div>
+
+            <div class="stacked-section">
+              <h2>Announcements</h2>
+              <ul id="announcements" class="announcement-list" aria-label="Announcements"></ul>
+            </div>
+          </div>
+        </div><!-- /.grid-2 -->
+      </section><!-- /#dashboard-view -->
+
+
+      <!-- ── COURSES VIEW ───────────────────────────────────── -->
+      <section id="courses-view" class="view" aria-label="Courses">
+        <div class="card">
+          <h2>All Courses</h2>
+          <p class="sub-text">Browse all available courses and track your progress.</p>
+          <div id="courses-list" class="course-grid"></div>
+        </div>
+
+        <div class="card" id="course-detail-card">
+          <h2 id="course-detail-title">Course Detail</h2>
+          <p id="course-detail-description" class="sub-text">
+            Select a course above to view its modules and track progress.
+          </p>
+          <p id="course-detail-meta" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.25rem;"></p>
+          <div id="course-modules" style="margin-top:1rem;"></div>
+        </div>
+      </section><!-- /#courses-view -->
+
+
+      <!-- ── SCHEDULE VIEW ──────────────────────────────────── -->
+      <section id="schedule-view" class="view" aria-label="Schedule and Tasks">
+        <div class="card">
+          <h2>My Schedule &amp; Tasks</h2>
+          <p class="sub-text">
+            Plan your sessions, set reminders, and stay on track with
+            smart task scheduling.
+          </p>
+
+          <div class="schedule-actions">
+            <button id="add-task-btn" class="primary-btn">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Task
+            </button>
+            <span style="margin-left:auto;color:var(--text-dim);font-size:0.8rem;">
+              Tasks will appear in Today's Plan and can trigger browser reminders.
+            </span>
+          </div>
+
+          <!-- 7-day strip -->
+          <div id="week-strip" class="week-strip" role="list" aria-label="7-day calendar strip"></div>
+
+          <!-- Today's tasks -->
+          <div class="card" style="margin-top:1rem;background:rgba(255,255,255,0.012);border-color:var(--border);">
+            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0;">Today's Plan</h3>
+            <div id="today-tasks" class="today-tasks" aria-live="polite"></div>
+          </div>
+        </div>
+      </section><!-- /#schedule-view -->
+
+
+      <!-- ── PROFILE VIEW ───────────────────────────────────── -->
+      <section id="profile-view" class="view" aria-label="Profile">
+        <div class="card" style="max-width:640px;">
+          <h2>My Profile</h2>
+          <p class="sub-text" style="margin-bottom:1rem;">Your account details and learning preferences.</p>
+          <p><strong>Name</strong><span id="profile-name"></span></p>
+          <p><strong>Email</strong><span id="profile-email"></span></p>
+          <p><strong>Role</strong><span id="profile-role"></span></p>
+          <p><strong>Interests</strong><span id="profile-interests"></span></p>
+          <p class="sub-text" style="margin-top:1rem;border:none;padding-top:0;">
+            Interests are currently set from the backend. Edit functionality can be added as a future enhancement.
+          </p>
+        </div>
+      </section><!-- /#profile-view -->
+
+
+      <!-- ── SETTINGS VIEW ──────────────────────────────────── -->
+      <section id="settings-view" class="view" aria-label="Settings">
+        <div class="card" style="max-width:640px;">
+          <h2>Settings</h2>
+          <p class="sub-text">
+            Configure your theme, notification preferences, and other account options here.
+            Full settings support coming soon.
+          </p>
+        </div>
+      </section><!-- /#settings-view -->
+
+    </main><!-- /.main -->
+  </div><!-- /.layout-container -->
+</div><!-- /#app-container -->
+
+
+<!-- ── TASK MODAL ──────────────────────────────────────────────── -->
+<div id="task-modal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Task editor">
+  <div class="modal-content small-width">
+    <h3 id="task-modal-title">Add Task</h3>
+
+    <form id="task-form" onsubmit="return false;" novalidate>
+      <label for="task-title">Title <span style="color:var(--danger)">*</span></label>
+      <input id="task-title" type="text" placeholder="What do you need to do?" required />
+
+      <label for="task-notes">Notes</label>
+      <textarea id="task-notes" rows="2" placeholder="Optional notes or context…"></textarea>
+
+      <div style="display:flex;gap:0.6rem;margin-top:0.1rem;">
+        <div style="flex:1;">
+          <label for="task-due-date">Due date</label>
+          <input id="task-due-date" type="date" />
+        </div>
+        <div style="flex:1;">
+          <label for="task-due-time">Due time</label>
+          <input id="task-due-time" type="time" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.6rem;">
+        <div style="flex:1;">
+          <label for="task-duration">Duration (minutes)</label>
+          <input id="task-duration" type="number" min="0" value="30" />
+        </div>
+        <div style="flex:1;">
+          <label for="task-priority">Priority</label>
+          <select id="task-priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="task-recurrence">Recurrence</label>
+      <select id="task-recurrence">
+        <option value="">None</option>
+        <option value="daily|1">Daily</option>
+        <option value="weekly|1">Weekly</option>
+      </select>
+
+      <div style="display:flex;gap:0.6rem;margin-top:1.25rem;">
+        <button id="task-save"   class="primary-btn">Save task</button>
+        <button id="task-cancel" class="secondary-btn" type="button">Cancel</button>
+      </div>
+
+      <div id="task-modal-msg" class="error-msg"></div>
+    </form>
+  </div>
+</div><!-- /#task-modal -->
+
+
+<!-- ── CHATBOT WIDGET ─────────────────────────────────────────── -->
+<link rel="stylesheet" href="/chatbot/chatbot.css" />
+<div id="chatbot-root">
+  <button id="chatbot-toggle" aria-label="Open course assistant" title="Course Assistant">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
+
+  <div id="chatbot-modal" class="hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Course assistant">
+    <div class="chatbot-panel">
+      <div class="chatbot-header">
+        <div class="chatbot-header-left">
+          <div class="chatbot-avatar">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <div>
+            <div class="chatbot-title">Course Assistant</div>
+            <div class="chatbot-status">
+              <span class="chatbot-status-dot"></span>Online
+            </div>
+          </div>
+        </div>
+        <button id="chatbot-close" title="Close" aria-label="Close assistant">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div><!-- /.chatbot-header -->
+
+      <div id="chatbot-body" class="chatbot-body" role="log" aria-live="polite" aria-label="Chat messages">
+        <!-- messages injected here by chatbot.js -->
+      </div>
+
+      <form id="chatbot-form" class="chatbot-composer" autocomplete="off">
+        <input
+          id="chatbot-input"
+          placeholder="Ask anything about the course…"
+          aria-label="Type your message"
+        />
+        <button id="chatbot-send" type="submit" aria-label="Send message">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22,2 15,22 11,13 2,9"/>
+          </svg>
+        </button>
+      </form>
+    </div><!-- /.chatbot-panel -->
+  </div><!-- /#chatbot-modal -->
+</div><!-- /#chatbot-root -->
+
+<script src="/chatbot/chatbot.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

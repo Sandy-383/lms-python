@@ -1,0 +1,4 @@
+cd C:\Users\saiku\Desktop\lms-python
+.\venv\Scripts\Activate
+pip install flask flask-cors numpy pandas requests joblib scikit-learn opencv-python mediapipe
+python app.py

@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+focus detection deep learning/
+deep_learning_corrupted/__pycache__/
+.DS_Store
