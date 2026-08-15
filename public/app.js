@@ -45,6 +45,42 @@ function humanizeFilename(name) {
     .trim();
 }
 
+// ===== YouTube embed helpers =====
+// Course videos may point at a YouTube URL (unlisted uploads) instead of a
+// locally-hosted file -- large video files served directly from a home
+// connection's upload bandwidth don't play reliably for remote viewers, so
+// some/all courses may use YouTube for hosting instead.
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+let _youTubeApiPromise = null;
+function loadYouTubeApi() {
+  if (_youTubeApiPromise) return _youTubeApiPromise;
+  _youTubeApiPromise = new Promise((resolve) => {
+    if (window.YT && window.YT.Player) {
+      resolve(window.YT);
+      return;
+    }
+    const prevCallback = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof prevCallback === "function") prevCallback();
+      resolve(window.YT);
+    };
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  });
+  return _youTubeApiPromise;
+}
 
 
 // ==========================================================
@@ -256,7 +292,13 @@ if (loginForm) {
 }
 
 if (logoutBtn) {
-  logoutBtn.addEventListener("click", () => {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await api("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      // ignore -- still proceed to clear local state even if the
+      // backend call fails (e.g. offline), so the user isn't stuck
+    }
     currentUser = null;
     dashboardData = null;
     localStorage.removeItem("lmsUser");
@@ -546,23 +588,12 @@ async function showCourseDetail(courseId) {
 
     // ================= VIDEO PLAYER =================
     if (course.media_type === "video" && course.video_url) {
-      const urlParts = course.video_url.split("/");
-      const basename = urlParts[urlParts.length - 1] || "";
-      const encodedBasename = encodeURIComponent(decodeURIComponent(basename));
-      const safeSrc = `/static/videos/${encodedBasename}`;
+      const youTubeId = extractYouTubeId(course.video_url);
 
       const playerWrap = document.createElement("div");
       playerWrap.className = "course-video-wrap";
 
-      const videoEl = document.createElement("video");
-      videoEl.controls = true;
-      videoEl.preload = "metadata";
-      videoEl.playsInline = true;
-      videoEl.style.width = "100%";
-      videoEl.style.borderRadius = "8px";
-      videoEl.src = safeSrc;
-
-      // ---- status labels ----
+      // ---- status labels (shared by both player types) ----
       const status = document.createElement("div");
       status.className = "video-status";
       status.style.marginTop = "8px";
@@ -576,7 +607,10 @@ async function showCourseDetail(courseId) {
       focusStatus.style.fontSize = "0.9rem";
       focusStatus.textContent = "Focus status: camera off";
 
-      // ---- CAMERA TOGGLE BUTTON ----
+      // ---- CAMERA TOGGLE BUTTON (shared) ----
+      // `isCurrentlyPlaying()` is filled in below by whichever player type
+      // is used, so this button doesn't need to know which one it is.
+      let isCurrentlyPlaying = () => false;
       const cameraToggleBtn = document.createElement("button");
       cameraToggleBtn.className = "secondary-btn tiny";
       cameraToggleBtn.style.marginTop = "8px";
@@ -591,49 +625,111 @@ async function showCourseDetail(courseId) {
           stopFocusDetection();
         } else {
           cameraToggleBtn.textContent = "Camera: ON";
-          if (!videoEl.paused) {
+          if (isCurrentlyPlaying()) {
             startFocusDetection(focusStatus);
           }
         }
       };
 
-      // ---- VIDEO EVENTS ----
-      videoEl.addEventListener("loadedmetadata", () => {
-        const dur = isFinite(videoEl.duration)
-          ? `${Math.round(videoEl.duration)}s`
-          : "unknown";
-        status.textContent = `Duration: ${dur}`;
-      });
+      if (youTubeId) {
+        // ---- YOUTUBE PLAYER (unlisted upload) ----
+        const playerHost = document.createElement("div");
+        playerHost.id = `yt-player-${course.id}-${Date.now()}`;
+        playerHost.style.width = "100%";
+        playerHost.style.aspectRatio = "16 / 9";
+        playerHost.style.borderRadius = "8px";
+        playerWrap.appendChild(playerHost);
 
-      videoEl.addEventListener("playing", () => {
-        currentVideoEl = videoEl;
-        currentFocusStatusEl = focusStatus;
+        // Proxy object so other code (e.g. the nav camera-toggle button)
+        // that reads `currentVideoEl.paused` keeps working unmodified,
+        // without needing to know this is a YouTube embed under the hood.
+        let ytPlayer = null;
+        isCurrentlyPlaying = () => !!ytPlayer && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+        const videoProxy = { get paused() { return !isCurrentlyPlaying(); } };
 
-        if (cameraEnabled) {
-          focusStatus.textContent = "Starting focus detection…";
-          startFocusDetection(focusStatus);
-        }
-      });
+        loadYouTubeApi().then((YT) => {
+          ytPlayer = new YT.Player(playerHost.id, {
+            videoId: youTubeId,
+            playerVars: { playsinline: 1 },
+            events: {
+              onReady: (e) => {
+                const dur = e.target.getDuration();
+                status.textContent = dur ? `Duration: ${Math.round(dur)}s` : "Ready";
+              },
+              onStateChange: (e) => {
+                if (e.data === YT.PlayerState.PLAYING) {
+                  currentVideoEl = videoProxy;
+                  currentFocusStatusEl = focusStatus;
+                  if (cameraEnabled) {
+                    focusStatus.textContent = "Starting focus detection…";
+                    startFocusDetection(focusStatus);
+                  }
+                } else if (e.data === YT.PlayerState.PAUSED) {
+                  stopFocusDetection();
+                  if (cameraEnabled) focusStatus.textContent = "Focus detection paused";
+                } else if (e.data === YT.PlayerState.ENDED) {
+                  stopFocusDetection();
+                  focusStatus.textContent = "Video ended";
+                }
+              },
+            },
+          });
+        });
+      } else {
+        // ---- LOCAL FILE PLAYER (served from this app's own /static/videos) ----
+        const urlParts = course.video_url.split("/");
+        const basename = urlParts[urlParts.length - 1] || "";
+        const encodedBasename = encodeURIComponent(decodeURIComponent(basename));
+        const safeSrc = `/static/videos/${encodedBasename}`;
 
-      videoEl.addEventListener("pause", () => {
-        stopFocusDetection();
-        if (cameraEnabled) {
-          focusStatus.textContent = "Focus detection paused";
-        }
-      });
+        const videoEl = document.createElement("video");
+        videoEl.controls = true;
+        videoEl.preload = "metadata";
+        videoEl.playsInline = true;
+        videoEl.style.width = "100%";
+        videoEl.style.borderRadius = "8px";
+        videoEl.src = safeSrc;
 
-      videoEl.addEventListener("ended", () => {
-        stopFocusDetection();
-        focusStatus.textContent = "Video ended";
-      });
+        isCurrentlyPlaying = () => !videoEl.paused;
 
-      videoEl.addEventListener("error", (e) => {
-        console.error("Video load error:", e);
-        status.textContent = "Unable to load video.";
-      });
+        videoEl.addEventListener("loadedmetadata", () => {
+          const dur = isFinite(videoEl.duration)
+            ? `${Math.round(videoEl.duration)}s`
+            : "unknown";
+          status.textContent = `Duration: ${dur}`;
+        });
 
-      // ---- APPEND ----
-      playerWrap.appendChild(videoEl);
+        videoEl.addEventListener("playing", () => {
+          currentVideoEl = videoEl;
+          currentFocusStatusEl = focusStatus;
+
+          if (cameraEnabled) {
+            focusStatus.textContent = "Starting focus detection…";
+            startFocusDetection(focusStatus);
+          }
+        });
+
+        videoEl.addEventListener("pause", () => {
+          stopFocusDetection();
+          if (cameraEnabled) {
+            focusStatus.textContent = "Focus detection paused";
+          }
+        });
+
+        videoEl.addEventListener("ended", () => {
+          stopFocusDetection();
+          focusStatus.textContent = "Video ended";
+        });
+
+        videoEl.addEventListener("error", (e) => {
+          console.error("Video load error:", e);
+          status.textContent = "Unable to load video.";
+        });
+
+        playerWrap.appendChild(videoEl);
+      }
+
+      // ---- APPEND (shared) ----
       playerWrap.appendChild(status);
       playerWrap.appendChild(focusStatus);
       playerWrap.appendChild(cameraToggleBtn);
@@ -1068,17 +1164,29 @@ async function startFocusDetection(statusEl) {
 
       const image = canvas.toDataURL("image/jpeg");
 
-      const res = await api("/api/focus/analyze", {
-        method: "POST",
-        body: JSON.stringify({ image }),
-      });
+      try {
+        const res = await api("/api/focus/analyze", {
+          method: "POST",
+          body: JSON.stringify({ image }),
+        });
 
-      if (res.focused === false) {
-        statusEl.textContent = `⚠️ Not focused: ${res.reason}`;
-        statusEl.style.color = "red";
-      } else {
-        statusEl.textContent = "✅ Focused";
-        statusEl.style.color = "green";
+        // Only report whether the person is actually looking at the screen
+        // (face present, eyes open) -- deliberately ignore the emotion
+        // sub-state (frustrated/confused/bored/neutral) here. Being
+        // frustrated or confused doesn't mean someone isn't focusing; it
+        // would be misleading to show anything other than "Focused" as
+        // long as they're actually present and attentive.
+        if (res.focused === false) {
+          statusEl.textContent = `⚠️ Not focused: ${res.reason}`;
+          statusEl.style.color = "red";
+        } else {
+          statusEl.textContent = "✅ Focused";
+          statusEl.style.color = "green";
+        }
+      } catch (err) {
+        console.error("focus/analyze failed:", err);
+        statusEl.textContent = `⚠️ Focus check failed: ${err.message}`;
+        statusEl.style.color = "orange";
       }
     }, 2000);
 
