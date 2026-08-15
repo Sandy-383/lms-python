@@ -1,0 +1,114 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # $$ escapes the $ from Compose's own variable interpolation so the
+      # literal string reaches the container, where the shell substitutes
+      # POSTGRES_USER/POSTGRES_DB (set by the official postgres image from
+      # the same env vars used to initialize the database).
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    # Not published to the host -- only the app service needs to reach
+    # Ollama's API, over the internal Compose network at ollama:11434.
+    # See the "Ollama model pull" note below for the one-time setup step.
+    #
+    # GPU passthrough: requires Docker Desktop's NVIDIA container runtime
+    # (already present on this host) and only makes sense on a host that
+    # actually has an NVIDIA GPU -- remove this "deploy" block entirely
+    # when deploying to a GPU-less host (e.g. a typical cloud VPS), since
+    # Compose will fail to start the service if no matching GPU exists.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    ports:
+      # Published to the host (not just "expose") so a local tunnel tool
+      # (e.g. cloudflared) running directly on this machine can reach the
+      # app via http://localhost:5000. When deployed to a VPS behind the
+      # reverse-proxy service instead, this can go back to "expose: [5000]"
+      # since Caddy reaches it over the internal Compose network either way.
+      - "5000:5000"
+    volumes:
+      # Large binary assets stay out of the image (see Dockerfile comment)
+      # and are bind-mounted read-only instead. Rebuilding the app image
+      # after a code change never re-copies these ~600MB combined.
+      - ./public/static/videos:/app/public/static/videos:ro
+      - ./embeddings.joblib:/app/embeddings.joblib:ro
+      - ./deep_learning/checkpoints:/app/deep_learning/checkpoints:ro
+    # GPU passthrough for the focus-detection model (deep_learning/emotion_model.py).
+    # Same caveat as the ollama service above: remove this block on a GPU-less host.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  reverse-proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  ollama_data:
+  caddy_data:
+  caddy_config:
+
+# ---------------------------------------------------------------------
+# Ollama model pull (one-time, after the first `docker compose up -d`):
+# these are large downloads (a few GB each) done manually on purpose --
+# it's simpler and more transparent for a one-off VPS setup than scripting
+# it into the image/entrypoint, and it means model downloads don't block
+# or bloat `docker compose build`.
+#
+#   docker compose exec ollama ollama pull llama3.2
+#   docker compose exec ollama ollama pull bge-m3
+#
+# Re-run these after `docker volume rm` on ollama_data (or on a fresh VPS)
+# since the models live in that named volume, not in the image.
+# ---------------------------------------------------------------------

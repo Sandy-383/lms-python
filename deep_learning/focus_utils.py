@@ -3,6 +3,15 @@ import mediapipe as mp
 import numpy as np
 
 class FocusDetector:
+    """
+    Rule-based (no heavy model weights) eye/face-focus check backed by a
+    MediaPipe FaceMesh instance. FaceMesh is stateful and NOT thread-safe,
+    and construction here is cheap (no large checkpoint to load, unlike
+    EmotionDetector's shared C3D model) -- so, for multi-user use, create
+    one FocusDetector PER SESSION/user rather than sharing a single global
+    instance across concurrent requests.
+    """
+
     def __init__(self):
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(

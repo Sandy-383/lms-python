@@ -1,0 +1,29 @@
+# --- Never send these into the build context ---------------------------
+.git
+.gitignore
+.gitattributes
+.vscode
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# --- Local Python environment / caches ----------------------------------
+venv/
+**/__pycache__/
+*.pyc
+
+# --- Non-runtime files (docs, training scripts, dead/experimental code,
+# editor config) -- kept in the repo for reference but not needed to run
+# the deployed app, so they live under extra/ and never enter the image.
+extra/
+
+# --- Secrets: never bake real env values into an image layer ------------
+.env
+
+# --- Large binary assets: bind-mounted at runtime instead of baked into
+# the image (see docker-compose.yml). Keeping these out of the build
+# context also makes `docker build` faster since they never get hashed/
+# sent to the daemon.
+public/static/videos/
+embeddings.joblib
+**/checkpoints/

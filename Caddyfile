@@ -1,0 +1,18 @@
+# Caddy reads {$DOMAIN} from its container environment (see the
+# reverse-proxy service's env_file in docker-compose.yml) and substitutes
+# it here at startup -- keeps the actual hostname out of this file so it
+# stays a one-line change (and out of version control if you ever need a
+# different domain for a fork/staging copy).
+#
+# Automatic HTTPS: Caddy requests and renews a Let's Encrypt certificate
+# for {$DOMAIN} via the HTTP-01 challenge on first startup, with zero
+# further config -- this works for a DuckDNS hostname exactly the same way
+# it would for a normal registrar domain, since Let's Encrypt only cares
+# that the A record resolves to this VPS's public IP and port 80 is
+# reachable, both of which DuckDNS + this compose file's port mapping
+# already satisfy.
+{$DOMAIN} {
+	encode gzip
+
+	reverse_proxy app:5000
+}

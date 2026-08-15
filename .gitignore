@@ -4,3 +4,11 @@ __pycache__/
 focus detection deep learning/
 deep_learning_corrupted/__pycache__/
 .DS_Store
+
+# Real secrets -- only .env.example is tracked
+.env
+
+# Local SQLite fallback database (DATABASE_URL unset) -- may contain
+# real user password hashes / PII on a developer machine, never commit it.
+*.db
+
